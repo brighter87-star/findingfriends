@@ -1,0 +1,6 @@
+{
+  "python.pythonPath": "/path/to/venv/bin/python",
+  "python.venvPath": "/path/to",          // 여러 venv 디렉토리 루트일 때
+  "pyright.inlayHints.functionLikeReturnTypes.enabled": true,
+  "pyright.inlayHints.parameterNames.enabled": "literals"
+}

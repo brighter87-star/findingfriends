@@ -7,7 +7,6 @@ def run_corr_analysis(df, ticker, days, excluded_tickers):
         raise ValueError(f"\n분석 대상 DataFrame에 {ticker}가 존재하지 않습니다.")
     sliced_df=df.iloc[-days:]
 
-    breakpoint()
     corr_series=sliced_df.corrwith(sliced_df[ticker], 
                                    method="pearson").drop(labels=np.append(excluded_tickers, ticker),
                                    errors="ignore")

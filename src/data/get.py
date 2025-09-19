@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from pathlib import Path
 
 import pandas as pd
 import requests
@@ -10,6 +11,8 @@ from src.utils.config import (
     OHLC_PATH,
     POLYGON_APIKEY,
     POLYGON_OHLC_URL,
+    POLYGON_TICKER_OVERVIEW_URL,
+    TICKER_OVERVIEW_PATH,
     TICKERLIST_PATH,
 )
 
@@ -65,6 +68,66 @@ def save_ohlc_for_days(tickers, last_date, days=30, interval="day"):
             print("\nAPI 제한 때문에 조금 쉬는 중이에요...")
 
 
+def _get_ticker_overview(ticker):
+    df = pd.DataFrame()
+    try:
+        response = requests.get(
+            url=f"{POLYGON_TICKER_OVERVIEW_URL}/{ticker}?apiKey={POLYGON_APIKEY}",
+        )
+        df = pd.DataFrame([response.json()["results"]])
+    except Exception as e:
+        logging.exception(f"{e}\n{ticker}를 가져오는데 실패함.")
+
+    return df
+
+
+def fetch_ticker_overview_all():
+    ticker_list = get_ticker_all()
+    df_all = pd.DataFrame([])
+    for idx, ticker in enumerate(ticker_list):
+        if (idx + 1) % 6 == 0:
+            print("API call limit으로 쉬는 중...\n")
+            time.sleep(60)
+            continue
+        print(f"{idx+1}/{len(ticker_list)}번째 종목({ticker}) 가져오는 중...")
+        df_all = pd.concat([df_all, _get_ticker_overview(ticker)], ignore_index=True)
+
+    print(df_all)
+
+    _to_parquet_ticker_overview(df_all)
+
+
+def _to_parquet_ticker_overview(df):
+    os.makedirs(TICKER_OVERVIEW_PATH, exist_ok=True)
+    today = pd.Timestamp.today().strftime("%Y-%m-%d")
+    file_path = os.path.join(
+        TICKER_OVERVIEW_PATH,
+        f"ticker_overview_all-{today}.parquet",
+    )
+    try:
+        df.to_parquet(file_path, index=False)
+    except Exception as e:
+        logging.exception(e)
+
+    print("성공적으로 parquet으로 저장함!")
+
+
+def from_parquet_to_df_ticker_overview(date):
+    """date: %Y-%m-%d"""
+    file_path = Path(TICKER_OVERVIEW_PATH) / f"ticker_overview_all-{date}.parquet"
+
+    try:
+        df = pd.read_parquet(file_path)
+        return df
+
+    except Exception:
+        logging.exception(
+            f"{file_path}에서 종목별 기본 정보를 가져오는데 실패했습니다.",
+        )
+        return None
+
+
 if __name__ == "__main__":
     tickers = get_ticker_all()
-    save_ohlc_for_days(tickers=tickers, last_date="2025-09-12", days=400)
+    # save_ohlc_for_days(tickers, last_date="2025-09-18", days=30)
+    df = from_parquet_to_df_ticker_overview("2025-09-18")

@@ -1,6 +1,6 @@
 import logging
 
-from src.analysis.preprocessing import preprocessing
+from src.analysis.preprocessing import filter_volume_and_min_days
 
 
 def run_corr_analysis(df, ticker, days, top=10):
@@ -16,6 +16,10 @@ def run_corr_analysis(df, ticker, days, top=10):
     return corr_series.sort_values(ascending=False).head(top)
 
 
+def post_corr_mapping():
+    get_etf
+
+
 if __name__ == "__main__":
-    df = preprocessing(target_col="c")
+    df = filter_volume_and_min_days(target_col="c")
     run_corr_analysis(df, ticker="RGTI", days=35)

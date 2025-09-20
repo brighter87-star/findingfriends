@@ -14,10 +14,6 @@ class FilterCtx:
     min_days: int = 10
 
 
-def _make_pct_change_col(df) -> pd.DataFrame:
-    return df
-
-
 def _load_and_merge_OHLC_all():
     date_list = get_date_list(days=100)
     dfs = []
@@ -39,8 +35,8 @@ def _from_long_to_wide(df, col="c"):
     return wide_df
 
 
-def _add_pct_change(df):
-    return df.pct_change(fill_method=None)
+def _add_pct_change(df, interval=1):
+    return df.pct_change(fill_method=None, period=interval)
 
 
 def _drop_low_liquidity(df, ctx):
@@ -59,7 +55,7 @@ def _drop_few_trading_days(df, ctx):
     return df[~df["T"].isin(bad_tickers)]
 
 
-def preprocessing(target_col="c"):
+def filter_volume_and_min_days(target_col="c"):
     df = _load_and_merge_OHLC_all()
     ctx = FilterCtx(dollar_volume=1000000, min_days=15)
 
@@ -71,4 +67,4 @@ def preprocessing(target_col="c"):
 
 
 if __name__ == "__main__":
-    target_df = preprocessing(target_col="c")
+    target_df = filter_volume_and_min_days(target_col="c")

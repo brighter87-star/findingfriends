@@ -1,6 +1,6 @@
 import logging
 
-from src.analysis.preprocessing import filter_volume_and_min_days
+from src.data.get import from_parquet_to_df_etf_holdings
 
 
 def run_corr_analysis(df, ticker, days, top=10):
@@ -17,9 +17,16 @@ def run_corr_analysis(df, ticker, days, top=10):
 
 
 def post_corr_mapping():
-    get_etf
+    holdings_df = from_parquet_to_df_etf_holdings("2025-09-21")
+    themes_by_ticker = (
+        holdings_df.groupby("Ticker")["Theme"]
+        .apply(lambda s: set(s.dropna()))
+        .to_dict()
+    )
+    print(len(themes_by_ticker.keys()))
 
 
 if __name__ == "__main__":
-    df = filter_volume_and_min_days(target_col="c")
-    run_corr_analysis(df, ticker="RGTI", days=35)
+    # df = filter_volume_and_min_days(target_col="c")
+    # run_corr_analysis(df, ticker="RGTI", days=35)
+    post_corr_mapping()

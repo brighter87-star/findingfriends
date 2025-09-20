@@ -214,9 +214,11 @@ def get_and_save_etf_holdings():
 def from_parquet_to_df_etf_holdings(date):
     file_path = Path(ETF_HOLDINGS_PATH) / f"ETF_HOLDINGS_{date}.parquet"
     df = pd.read_parquet(file_path)
-    print(df.head(3))
+    return df
+
 
 if __name__ == "__main__":
+    get_and_save_etf_holdings()
     from_parquet_to_df_etf_holdings("2025-09-21")
     # tickers = get_ticker_all()
     # df = get_sector_info_from_y(tickers)

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 import requests
+import yfinance as yf
 
 from src.utils.calc import get_date_list
 from src.utils.config import (
@@ -94,9 +95,6 @@ def fetch_ticker_overview_all():
 
     print(df_all)
 
-    _to_parquet_ticker_overview(df_all)
-
-
 def _to_parquet_ticker_overview(df):
     os.makedirs(TICKER_OVERVIEW_PATH, exist_ok=True)
     today = pd.Timestamp.today().strftime("%Y-%m-%d")
@@ -126,8 +124,52 @@ def from_parquet_to_df_ticker_overview(date):
         )
         return None
 
+def from_parquet_to_df_ticker_overview_yf(date):
+    file_path = Path(TICKER_OVERVIEW_PATH) / f"ticker_overview_all_yf-{date}.parquet"
+
+    try:
+        df = pd.read_parquet(file_path)
+        return df
+
+    except Exception as e:
+        logging.exception(
+            f"{file_path}에서 종목별 기본 정보를 가져오는데 실패했습니다.",
+        )
+        return None
+
+def get_sector_info_from_y(tickers):
+    api_call = 0
+    records = []
+    for idx, ticker in enumerate(tickers):
+        api_call += 1
+        if api_call % 100 == 0:
+            time.sleep(60)
+
+        try:
+            print(f"{api_call}/{len(tickers)}번째 티커 정보를 받아오고 있습니다.")
+            info = yf.Ticker(ticker).info
+            
+        except Exception as e:
+            logging.error(e, "에러로 yf에서 정보 받아오지 못함.")
+        records.append({
+            "Ticker": ticker,
+            "industry": info.get("industry"),
+            "industryDisp": info.get("industryDisp"),
+            "sector": info.get("sector"),
+            "sectorDisp": info.get("sectorDisp"),
+            "beta": info.get("beta"),
+            "marketCap": info.get("markgetCap"),
+        })
+    return pd.DataFrame(records)
+        
+def save_ticker_info_from_yf(df):
+    today = pd.Timestamp.today().strftime("%Y-%m-%d")
+    file_path = Path(TICKER_OVERVIEW_PATH) / f"ticker_overview_all_yf-{today}.parquet"
+    df.to_parquet(file_path, index=False)
 
 if __name__ == "__main__":
     tickers = get_ticker_all()
+    df = get_sector_info_from_y(tickers)
+    save_ticker_info_from_yf(df)
     # save_ohlc_for_days(tickers, last_date="2025-09-18", days=30)
     df = from_parquet_to_df_ticker_overview("2025-09-18")
